@@ -6,11 +6,12 @@ interface SplitAudioParams {
   name: string
   inputPath: string
   outputPath: string
-  segmentTime: number
 }
 
+const SPLIT_SEGMENT_DURATION = 600
+
 export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
-  const { name, inputPath, outputPath, segmentTime } = params
+  const { name, inputPath, outputPath } = params
 
   const outputBasePath = path.join(__dirname, outputPath)
 
@@ -26,7 +27,7 @@ export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
       '-map_metadata', '-1', // Strip all metadata
       '-qscale:a', '5', // Set quality scale to 5
       '-f', 'segment', // Split the output into segments
-      '-segment_time', segmentTime.toString(), // Duration of each segment
+      '-segment_time', SPLIT_SEGMENT_DURATION.toString(), // Duration of each segment
       '-reset_timestamps', '1', // Reset timestamps for segments
       '-loglevel', 'error',
       output
@@ -58,8 +59,4 @@ export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
       console.log(`stdout: ${data}`);
     });
   });
-}
-
-export async function processAudioJob() {
-  
 }

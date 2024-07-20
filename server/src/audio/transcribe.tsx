@@ -1,4 +1,3 @@
-import fs from "fs"
 import axios from "axios"
 import FormData from "form-data"
 
@@ -30,7 +29,7 @@ interface GroqTranscriptionResponse {
     x_groq: { id: string }
 }
 
-export async function transcribeAudio(stream: fs.ReadStream, timeOffset: number): Promise<Array<ParsedTranscriptionSegment> | null> {
+export async function transcribeAudio(stream: ReadableStream): Promise<Array<ParsedTranscriptionSegment> | null> {
     const form = new FormData();
 
     form.append('file', stream);
@@ -46,13 +45,9 @@ export async function transcribeAudio(stream: fs.ReadStream, timeOffset: number)
 
     try {
         const { data } = await axios.post<GroqTranscriptionResponse>('https://api.groq.com/openai/v1/audio/transcriptions', form, { headers });
-        return data.segments.map(({ start, end, text }) => ({ start: start + timeOffset, end: end + timeOffset, text: text.trim() }));
+        return data.segments.map((segment) => ({ ...segment, text: segment.text.trim() }));
     } catch (error) {
         console.error('Error transcribing audio:', error);
         return null
     }
-}
-
-export async function transcribeJob() {
-    
 }

@@ -1,11 +1,10 @@
 import { sql } from 'drizzle-orm';
-import { index, pgTable, serial, text, integer, varchar, timestamp } from 'drizzle-orm/pg-core';
+import { index, pgTable, serial, text, integer, boolean, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core';
 import { relations } from 'drizzle-orm';
 
-// Define the "podcasts" table
 export const podcasts = pgTable('podcasts', {
     id: serial("id").primaryKey(),
-    title: varchar("title", { length: 255 }).notNull(),
+    title: varchar("title", { length: 255 }).unique(),
     link: text("link"),
     description: text("description"),
     language: varchar("language", { length: 255 }),
@@ -15,11 +14,11 @@ export const podcasts = pgTable('podcasts', {
     createdAt: timestamp("createdAt").defaultNow()
 });
 
-// Define the "episodes" table
 export const episodes = pgTable('episodes', {
     id: serial("id").primaryKey(),
     podcastId: integer("podcastId").notNull(),
     title: varchar("title", { length: 255 }).notNull(),
+    processed: boolean("processed").default(false),
     description: text("description"),
     releaseDate: timestamp("releaseDate").notNull(),
     thumbnailUrl: text("thumbnailUrl"),
@@ -27,16 +26,16 @@ export const episodes = pgTable('episodes', {
     createdAt: timestamp("createdAt").defaultNow()
 });
 
-// Define the "segments" table
 export const segments = pgTable('segments', {
     id: serial("id").primaryKey(),
     episodeId: integer("episodeId").notNull(),
+    processed: boolean("processed").default(false),
     duration: integer("duration").notNull(),
     position: integer("position").notNull(),  // Order of the segment in the episode
+    audioFileUrl: text("audioFileUrl").notNull(),
     createdAt: timestamp("createdAt").defaultNow()
 });
 
-// Define the "transcriptions" table with full-text search support
 export const transcriptions = pgTable('transcriptions', {
     id: serial("id").primaryKey(),
     segmentId: integer("segmentId").notNull(),
@@ -70,9 +69,9 @@ export const transcriptionsRelations = relations(transcriptions, ({ one }) => ({
 
 export type Podcast = typeof podcasts.$inferSelect;
 export type CreatePodcast = typeof podcasts.$inferInsert;
-export type PodcastEpisode = typeof episodes.$inferSelect;
-export type CreatePodcastEpisode = typeof episodes.$inferInsert;
-export type PodcastSegment = typeof segments.$inferSelect;
-export type CreatePodcastSegment = typeof segments.$inferInsert;
-export type PodcastTranscription = typeof transcriptions.$inferSelect;
-export type CreatePodcastTranscription = typeof transcriptions.$inferInsert;
+export type Episode = typeof episodes.$inferSelect;
+export type CreateEpisode = typeof episodes.$inferInsert;
+export type Segment = typeof segments.$inferSelect;
+export type CreateSegment = typeof segments.$inferInsert;
+export type Transcription = typeof transcriptions.$inferSelect;
+export type CreateTranscription = typeof transcriptions.$inferInsert;

@@ -1,9 +1,9 @@
 import Parser from 'rss-parser';
-import { CreatePodcast, CreatePodcastEpisode } from "../db/schema"
+import { CreatePodcast, CreateEpisode } from "../db/schema"
 
 const parser = new Parser()
 
-type ParsedPodcastEpisode = Omit<CreatePodcastEpisode, "podcastId">
+type ParsedPodcastEpisode = Omit<CreateEpisode, "podcastId">
 
 interface ParsedPodcast {
     podcast: CreatePodcast
@@ -26,9 +26,9 @@ export async function parseFromRssFeed(url: string): Promise<ParsedPodcast> {
     const episodes: Array<ParsedPodcastEpisode> = feed.items.map((item) => {
         return {
             title: item.title as string,
-            releaseDate: item.releaseDate,
+            releaseDate: new Date(item.isoDate as string),
             audioFileUrl: item.enclosure?.url as string,
-            description: item.summary,
+            description: item.content,
             thumbnailUrl: item.itunes.image
         }
     })
