@@ -1,70 +1,95 @@
-import { sql } from 'drizzle-orm';
-import { index, pgTable, serial, text, integer, boolean, varchar, timestamp, pgEnum } from 'drizzle-orm/pg-core';
-import { relations } from 'drizzle-orm';
+import { sql } from "drizzle-orm";
+import {
+  index,
+  pgTable,
+  serial,
+  text,
+  integer,
+  boolean,
+  varchar,
+  timestamp,
+  pgEnum,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
 
-export const podcasts = pgTable('podcasts', {
-    id: serial("id").primaryKey(),
-    title: varchar("title", { length: 255 }).unique(),
-    link: text("link"),
-    description: text("description"),
-    language: varchar("language", { length: 255 }),
-    categories: varchar("categories", { length: 255 }).array(),
-    author: varchar("author", { length: 255 }).notNull(),
-    thumbnailUrl: text("thumbnailUrl"),
-    createdAt: timestamp("createdAt").defaultNow()
+export const podcasts = pgTable("podcasts", {
+  id: serial("id").primaryKey(),
+  title: varchar("title", { length: 255 }).unique(),
+  link: text("link"),
+  description: text("description"),
+  language: varchar("language", { length: 255 }),
+  categories: varchar("categories", { length: 255 }).array(),
+  author: varchar("author", { length: 255 }).notNull(),
+  thumbnailUrl: text("thumbnailUrl"),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
-export const episodes = pgTable('episodes', {
-    id: serial("id").primaryKey(),
-    podcastId: integer("podcastId").notNull(),
-    title: varchar("title", { length: 255 }).notNull(),
-    processed: boolean("processed").default(false),
-    description: text("description"),
-    releaseDate: timestamp("releaseDate").notNull(),
-    thumbnailUrl: text("thumbnailUrl"),
-    audioFileUrl: text("audioFileUrl").notNull(),
-    createdAt: timestamp("createdAt").defaultNow()
+export const episodes = pgTable("episodes", {
+  id: serial("id").primaryKey(),
+  podcastId: integer("podcastId").notNull(),
+  title: varchar("title", { length: 255 }).notNull(),
+  processed: boolean("processed").default(false),
+  description: text("description"),
+  releaseDate: timestamp("releaseDate").notNull(),
+  thumbnailUrl: text("thumbnailUrl"),
+  audioFileUrl: text("audioFileUrl").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
-export const segments = pgTable('segments', {
-    id: serial("id").primaryKey(),
-    episodeId: integer("episodeId").notNull(),
-    processed: boolean("processed").default(false),
-    duration: integer("duration").notNull(),
-    position: integer("position").notNull(),  // Order of the segment in the episode
-    audioFileUrl: text("audioFileUrl").notNull(),
-    createdAt: timestamp("createdAt").defaultNow()
+export const segments = pgTable("segments", {
+  id: serial("id").primaryKey(),
+  episodeId: integer("episodeId").notNull(),
+  processed: boolean("processed").default(false),
+  duration: integer("duration").notNull(),
+  position: integer("position").notNull(), // Order of the segment in the episode
+  audioFileUrl: text("audioFileUrl").notNull(),
+  createdAt: timestamp("createdAt").defaultNow(),
 });
 
-export const transcriptions = pgTable('transcriptions', {
+export const transcriptions = pgTable(
+  "transcriptions",
+  {
     id: serial("id").primaryKey(),
     segmentId: integer("segmentId").notNull(),
-    startTime: integer("startTime").notNull(),  // Time in seconds from the start of the segment
-    endTime: integer("endTime").notNull(),    // Time in seconds from the start of the segment
-    transcription: text("transcription").notNull(),  // Transcription text
+    startTime: integer("startTime").notNull(), // Time in seconds from the start of the segment
+    endTime: integer("endTime").notNull(), // Time in seconds from the start of the segment
+    transcription: text("transcription").notNull(), // Transcription text
     createdAt: timestamp("createdAt").defaultNow(),
-}, (table) => ({
-    transcriptionSearchIndex: index('transcription_search_index')
-        .using('gin', sql`to_tsvector('spanish', ${table.transcription})`),
-}));
+  },
+  (table) => ({
+    transcriptionSearchIndex: index("transcription_search_index").using(
+      "gin",
+      sql`to_tsvector('spanish', ${table.transcription})`,
+    ),
+  }),
+);
 
 // Define the relations
 export const podcastsRelations = relations(podcasts, ({ many }) => ({
-    episodes: many(episodes),
+  episodes: many(episodes),
 }));
 
 export const episodesRelations = relations(episodes, ({ one, many }) => ({
-    podcast: one(podcasts, { fields: [episodes.podcastId], references: [podcasts.id] }),
-    segments: many(segments),
+  podcast: one(podcasts, {
+    fields: [episodes.podcastId],
+    references: [podcasts.id],
+  }),
+  segments: many(segments),
 }));
 
 export const segmentsRelations = relations(segments, ({ one, many }) => ({
-    episode: one(episodes, { fields: [segments.episodeId], references: [episodes.id] }),
-    transcriptions: many(transcriptions),
+  episode: one(episodes, {
+    fields: [segments.episodeId],
+    references: [episodes.id],
+  }),
+  transcriptions: many(transcriptions),
 }));
 
 export const transcriptionsRelations = relations(transcriptions, ({ one }) => ({
-    segment: one(segments, { fields: [transcriptions.segmentId], references: [segments.id] }),
+  segment: one(segments, {
+    fields: [transcriptions.segmentId],
+    references: [segments.id],
+  }),
 }));
 
 export type Podcast = typeof podcasts.$inferSelect;

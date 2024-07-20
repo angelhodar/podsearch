@@ -1,20 +1,20 @@
-import 'dotenv/config'
+import "dotenv/config";
 
-import { serve } from '@hono/node-server'
-import { client } from "./db"
-import api from "./api"
+import { serve } from "@hono/node-server";
+import { client } from "./db";
+import api from "./api";
 
-const port = 3000
+const port = 3000;
 
 async function main() {
-  await client.connect()
+  await client.connect();
 
-  console.log(`Server is running on port ${port}`)
+  console.log(`Server is running on port ${port}`);
 
   serve({
     fetch: api.fetch,
-    port
-  })
+    port,
+  });
 }
 
-main()
+main();
