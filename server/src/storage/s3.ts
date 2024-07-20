@@ -1,12 +1,13 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
+import config from "../config";
 import type { ReadStream } from "node:fs";
 
 const s3Client = new S3Client({
-  region: "eu-west-3",
+  region: "eu-west-1",
   credentials: {
-    accessKeyId: "your_access_key_id",
-    secretAccessKey: "your_secret_access_key",
+    accessKeyId: config.AWS_ACCESS_KEY_ID,
+    secretAccessKey: config.AWS_SECRET_ACCESS_KEY,
   },
 });
 
@@ -20,7 +21,7 @@ export async function upload(params: UploadParams) {
   const upload = new Upload({
     client: s3Client,
     params: {
-      Bucket: "bucket",
+      Bucket: config.AWS_BUCKET,
       Key: params.key,
       Body: params.stream,
       ContentType: params.contentType,
@@ -39,7 +40,7 @@ export async function upload(params: UploadParams) {
 
 export async function getObjectStream(key: string) {
   const command = new GetObjectCommand({
-    Bucket: "bucket",
+    Bucket: config.AWS_BUCKET,
     Key: key,
   });
 

@@ -1,14 +1,13 @@
 import path from "node:path";
 import fs from "node:fs";
 import { spawn } from "node:child_process";
+import config from "../config";
 
 interface SplitAudioParams {
   name: string;
   inputPath: string;
   outputPath: string;
 }
-
-const SPLIT_SEGMENT_DURATION = 600;
 
 export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
   const { name, inputPath, outputPath } = params;
@@ -17,6 +16,8 @@ export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
 
   const input = path.join(__dirname, inputPath);
   const output = path.join(outputBasePath, `${name}_%d.ogg`);
+
+  // TODO: Create output path if not exist
 
   return new Promise<string[]>((resolve, reject) => {
     const ffmpegArgs = [
@@ -35,7 +36,7 @@ export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
       "-f",
       "segment", // Split the output into segments
       "-segment_time",
-      SPLIT_SEGMENT_DURATION.toString(), // Duration of each segment
+      config.MAX_SEGMENT_DURATION.toString(), // Duration of each segment
       "-reset_timestamps",
       "1", // Reset timestamps for segments
       "-loglevel",
@@ -46,8 +47,7 @@ export async function splitAudio(params: SplitAudioParams): Promise<string[]> {
     const ffmpegProcess = spawn("ffmpeg", ffmpegArgs);
 
     ffmpegProcess.on("close", (code) => {
-      if (code !== 0)
-        reject(new Error(`FFmpeg process exited with code ${code}`));
+      if (code !== 0) reject(new Error(`FFmpeg process exited with code ${code}`));
 
       console.log(`Audio segments created successfully for ${name}!`);
 

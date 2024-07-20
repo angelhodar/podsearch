@@ -41,10 +41,7 @@ app.post("/podcasts", async (c) => {
 
   const parsedPodcast = await parseFromRssFeed(url);
 
-  const [insertedPodcast] = await db
-    .insert(podcasts)
-    .values(parsedPodcast.podcast)
-    .returning();
+  const [insertedPodcast] = await db.insert(podcasts).values(parsedPodcast.podcast).returning();
 
   const episodesToInsert = parsedPodcast.episodes.map((ep) => {
     return { ...ep, podcastId: insertedPodcast.id };

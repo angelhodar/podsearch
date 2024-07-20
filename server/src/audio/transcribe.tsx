@@ -1,5 +1,6 @@
 import axios from "axios";
 import FormData from "form-data";
+import config from "../config"
 
 interface TranscriptionSegment {
   id: number;
@@ -29,19 +30,17 @@ interface GroqTranscriptionResponse {
   x_groq: { id: string };
 }
 
-export async function transcribeAudio(
-  stream: ReadableStream,
-): Promise<Array<ParsedTranscriptionSegment> | null> {
+export async function transcribeAudio(stream: ReadableStream): Promise<Array<ParsedTranscriptionSegment> | null> {
   const form = new FormData();
 
   form.append("file", stream);
-  form.append("model", process.env.GROQ_MODEL || "whisper-large-v3");
+  form.append("model", config.GROQ_MODEL);
   form.append("temperature", "0");
   form.append("response_format", "verbose_json");
   form.append("language", "es");
 
   const headers = {
-    Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
+    Authorization: `Bearer ${config.GROQ_API_KEY}`,
     ...form.getHeaders(),
   };
 

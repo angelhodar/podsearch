@@ -2,39 +2,42 @@ import schedule from "node-schedule";
 import fs from "node:fs";
 import path from "node:path";
 import { eq } from "drizzle-orm";
-import {
-  db,
-  episodes,
-  segments,
-  transcriptions,
-  type CreateTranscription,
-} from "./db";
+import { db, episodes, segments, transcriptions, type CreateTranscription } from "./db";
 import { transcribeAudio } from "./audio/transcribe";
 import { splitAudio } from "./audio/split";
 import { upload, getObjectStream } from "./storage/s3";
 import { getStreamFromFileUrl } from "./utils";
+import config from "./config";
 
-schedule.scheduleJob("0 */4 * * *", async function processAudio() {
+export async function processEpisode() {
   const episode = await db.query.episodes.findFirst({
     where: eq(episodes.processed, false),
-    with: { segments: true },
+    with: { segments: true, podcast: true },
   });
+
+  console.log("Episode to process:");
+  console.log(episode);
 
   if (!episode) {
     console.log("No episode to process found");
     return;
   }
 
-  const episodeName = episode.title.toLowerCase().replace(" ", "_");
-  const episodeAudioKey = `${episodeName}.mp3`;
+  const episodeName = episode.podcast.title.toLowerCase().replaceAll(" ", "_");
+  const episodeAudioKey = `podcasts/${episodeName}.mp3`;
 
   if (episode.audioFileUrl.startsWith("https")) {
+    console.log(`Downloading audio file for ${episodeName} from ${episode.audioFileUrl}`);
     const audioStream = await getStreamFromFileUrl(episode.audioFileUrl);
+
+    console.log(`Uploading audio file for ${episodeName} to ${episodeAudioKey}`);
     await upload({
       stream: audioStream,
-      key: `podcasts/${episodeAudioKey}`,
+      key: episodeAudioKey,
       contentType: "audio/mp3",
     });
+
+    console.log(`Updating db value for episode ${episode.id} with new audio file ${episodeAudioKey}`);
     await db
       .update(episodes)
       .set({ audioFileUrl: episodeAudioKey })
@@ -43,67 +46,91 @@ schedule.scheduleJob("0 */4 * * *", async function processAudio() {
   }
 
   if (episode.segments.length === 0) {
+    // TODO: Write audio stream to file disk
+
+    console.log(`Generating audio segments db value for episode ${episode.id}...`);
+
     const splitPaths = await splitAudio({
       name: episodeName,
       inputPath: `../data/${episodeName}/input.mp3`,
       outputPath: `../data/${episodeName}/splits`,
     });
 
+    console.log("Generated audio segments");
+    console.log(splitPaths);
+
     for (const [i, audioPath] of splitPaths.entries()) {
       const audioStream = fs.createReadStream(audioPath);
       const audioName = path.basename(audioPath);
+      const audioKey = `segments/${audioName}`;
+
+      console.log(`Uploading audio segment ${audioKey}`);
+
       await upload({
         stream: audioStream,
-        key: `segments/${audioName}`,
+        key: audioKey,
         contentType: "audio/ogg",
       });
+
+      console.log("Inserting audio segment...");
+
       const [newSegment] = await db
         .insert(segments)
         .values({
           episodeId: episode.id,
-          duration: 600,
+          duration: config.MAX_SEGMENT_DURATION,
           position: i,
-          audioFileUrl: `segments/${audioName}`,
+          audioFileUrl: audioKey,
         })
         .returning();
+
+      console.log(`Audio segment inserted: ${newSegment}`);
+
       episode.segments.push(newSegment);
+      fs.unlinkSync(audioPath)
     }
   }
 
   const segmentsToProcess = episode.segments.filter((s) => !s.processed);
 
+  console.log(`Segments to process: ${segmentsToProcess.length}`);
+
   for (const segment of segmentsToProcess) {
-    const initialOffset = segment.position * segment.duration;
+    console.log(`Fetching stream for audio segment ${segment.id}`);
     const audioStream = await getObjectStream(segment.audioFileUrl);
+
+    console.log(`Generating transcription for audio segment ${segment.id}`);
     const transcription = await transcribeAudio(audioStream);
 
-    if (!transcription) continue;
+    if (!transcription) {
+      console.error(`Failed to generate transcription for audio segment ${segment.id}`);
+      continue;
+    }
 
-    const transcriptionsToInsert: CreateTranscription[] = transcription.map(
-      (tr) => {
-        return {
-          segmentId: segment.id,
-          startTime: tr.start + initialOffset,
-          endTime: tr.end + initialOffset,
-          transcription: tr.text,
-        };
-      },
-    );
+    const offset = segment.position * segment.duration;
 
+    const transcriptionsToInsert: CreateTranscription[] = transcription.map((tr) => {
+      return {
+        segmentId: segment.id,
+        startTime: tr.start + offset,
+        endTime: tr.end + offset,
+        transcription: tr.text,
+      };
+    });
+
+    console.log(`Inserting transcriptions for audio segment ${segment.id}`);
     await db.insert(transcriptions).values(transcriptionsToInsert);
-    await db
-      .update(segments)
-      .set({ processed: true })
-      .where(eq(segments.id, segment.id));
+
+    console.log(`Setting audio segment ${segment.id} as processed`);
+    await db.update(segments).set({ processed: true }).where(eq(segments.id, segment.id));
 
     segment.processed = true;
   }
 
   // If all episode segments are processed then mark episode as processed
   if (segmentsToProcess.every((s) => s.processed)) {
-    await db
-      .update(episodes)
-      .set({ processed: true })
-      .where(eq(episodes.id, episode.id));
+    await db.update(episodes).set({ processed: true }).where(eq(episodes.id, episode.id));
   }
-});
+}
+
+schedule.scheduleJob("0 */4 * * *", processEpisode);

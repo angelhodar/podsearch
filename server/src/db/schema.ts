@@ -1,20 +1,10 @@
 import { sql } from "drizzle-orm";
-import {
-  index,
-  pgTable,
-  serial,
-  text,
-  integer,
-  boolean,
-  varchar,
-  timestamp,
-  pgEnum,
-} from "drizzle-orm/pg-core";
+import { index, pgTable, serial, text, integer, boolean, varchar, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const podcasts = pgTable("podcasts", {
   id: serial("id").primaryKey(),
-  title: varchar("title", { length: 255 }).unique(),
+  title: varchar("title", { length: 255 }).unique().notNull(),
   link: text("link"),
   description: text("description"),
   language: varchar("language", { length: 255 }),
