@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { db, episodes, segments, transcriptions, type CreateTranscription } from "./db";
 import { transcribeAudio } from "./audio/transcribe";
 import { splitAudio } from "./audio/split";
-import { upload, getObjectStream } from "./storage/s3";
+import { upload, getObject } from "./storage/s3";
 import { getStreamFromFileUrl } from "./utils";
 import config from "./config";
 
@@ -23,7 +23,7 @@ export async function processEpisode() {
     return;
   }
 
-  const episodeName = episode.podcast.title.toLowerCase().replaceAll(" ", "_");
+  const episodeName = `${episode.podcast.title.toLowerCase().replaceAll(" ", "_")}_${episode.id}`;
   const episodeAudioKey = `podcasts/${episodeName}.mp3`;
 
   if (episode.audioFileUrl.startsWith("https")) {
@@ -46,14 +46,27 @@ export async function processEpisode() {
   }
 
   if (episode.segments.length === 0) {
-    // TODO: Write audio stream to file disk
+    const audioInputPath = `/tmp/${episodeName}/input.mp3`
+    const directoryPath = path.dirname(audioInputPath);
+
+    if (!fs.existsSync(directoryPath)) fs.mkdirSync(directoryPath, { recursive: true })
+
+    const fileStream = fs.createWriteStream(audioInputPath)
+    const { stream: audioStream } = await getObject(episodeAudioKey)
+
+     // Download the data by piping audioStream to fileStream
+     audioStream.pipe(fileStream);
+
+     await new Promise((resolve, reject) => {
+         fileStream.on('finish', resolve);
+         fileStream.on('error', reject);
+     });
 
     console.log(`Generating audio segments db value for episode ${episode.id}...`);
 
     const splitPaths = await splitAudio({
       name: episodeName,
-      inputPath: `../data/${episodeName}/input.mp3`,
-      outputPath: `../data/${episodeName}/splits`,
+      inputPath: audioInputPath,
     });
 
     console.log("Generated audio segments");
@@ -95,12 +108,12 @@ export async function processEpisode() {
 
   console.log(`Segments to process: ${segmentsToProcess.length}`);
 
-  for (const segment of segmentsToProcess) {
+  for (const segment of segmentsToProcess.slice(12)) {
     console.log(`Fetching stream for audio segment ${segment.id}`);
-    const audioStream = await getObjectStream(segment.audioFileUrl);
+    const data = await getObject(segment.audioFileUrl);
 
     console.log(`Generating transcription for audio segment ${segment.id}`);
-    const transcription = await transcribeAudio(audioStream);
+    const transcription = await transcribeAudio(data);
 
     if (!transcription) {
       console.error(`Failed to generate transcription for audio segment ${segment.id}`);

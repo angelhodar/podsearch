@@ -1,61 +1,68 @@
 import axios from "axios";
 import FormData from "form-data";
-import config from "../config"
+import config from "../config";
+import type { StorageObject } from "../storage/s3";
 
 interface TranscriptionSegment {
-  id: number;
-  seek: number;
-  start: number;
-  end: number;
-  text: string;
-  tokens: number[];
-  temperature: number;
-  avg_logprob: number;
-  compression_ratio: number;
-  no_speech_prob: number;
+	id: number;
+	seek: number;
+	start: number;
+	end: number;
+	text: string;
+	tokens: number[];
+	temperature: number;
+	avg_logprob: number;
+	compression_ratio: number;
+	no_speech_prob: number;
 }
 
 interface ParsedTranscriptionSegment {
-  start: number;
-  end: number;
-  text: string;
+	start: number;
+	end: number;
+	text: string;
 }
 
 interface GroqTranscriptionResponse {
-  duration: number;
-  language: string;
-  segments: Array<TranscriptionSegment>;
-  task: string;
-  text: string;
-  x_groq: { id: string };
+	duration: number;
+	language: string;
+	segments: Array<TranscriptionSegment>;
+	task: string;
+	text: string;
+	x_groq: { id: string };
 }
 
-export async function transcribeAudio(stream: ReadableStream): Promise<Array<ParsedTranscriptionSegment> | null> {
-  const form = new FormData();
+export async function transcribeAudio(data: StorageObject): Promise<Array<ParsedTranscriptionSegment> | null> {
+  const { stream, metadata} = data
 
-  form.append("file", stream);
-  form.append("model", config.GROQ_MODEL);
-  form.append("temperature", "0");
-  form.append("response_format", "verbose_json");
-  form.append("language", "es");
+	const form = new FormData();
 
-  const headers = {
-    Authorization: `Bearer ${config.GROQ_API_KEY}`,
-    ...form.getHeaders(),
-  };
+	form.append("file", stream, {
+		contentType: metadata.type,
+		knownLength: metadata.size,
+		filename: metadata.key,
+	});
+	form.append("model", config.GROQ_MODEL);
+	form.append("temperature", "0");
+	form.append("response_format", "verbose_json");
+	form.append("language", "es");
 
-  try {
-    const { data } = await axios.post<GroqTranscriptionResponse>(
-      "https://api.groq.com/openai/v1/audio/transcriptions",
-      form,
-      { headers },
-    );
-    return data.segments.map((segment) => ({
-      ...segment,
-      text: segment.text.trim(),
-    }));
-  } catch (error) {
-    console.error("Error transcribing audio:", error);
-    return null;
-  }
+	const headers = {
+		Authorization: `Bearer ${config.GROQ_API_KEY}`,
+		...form.getHeaders(),
+	};
+
+	try {
+		const { data } = await axios.post<GroqTranscriptionResponse>(
+			"https://api.groq.com/openai/v1/audio/transcriptions",
+			form,
+			{ headers },
+		);
+		return data.segments.map((segment) => ({
+			...segment,
+			text: segment.text.trim(),
+		}));
+	} catch (error) {
+		console.error("Error transcribing audio: ", error);
+		return null;
+	}
 }

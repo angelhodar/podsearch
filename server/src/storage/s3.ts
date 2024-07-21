@@ -1,6 +1,7 @@
 import { S3Client, GetObjectCommand } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import config from "../config";
+import type { Readable } from "node:stream"
 import type { ReadStream } from "node:fs";
 
 const s3Client = new S3Client({
@@ -15,6 +16,17 @@ interface UploadParams {
   stream: ReadableStream | ReadStream;
   key: string;
   contentType: string;
+}
+
+interface ObjectMetadata {
+  key: string
+  type: string
+  size: number
+}
+
+export interface StorageObject {
+  stream: Readable
+  metadata: ObjectMetadata
 }
 
 export async function upload(params: UploadParams) {
@@ -38,7 +50,7 @@ export async function upload(params: UploadParams) {
   }
 }
 
-export async function getObjectStream(key: string) {
+export async function getObject(key: string): Promise<StorageObject> {
   const command = new GetObjectCommand({
     Bucket: config.AWS_BUCKET,
     Key: key,
@@ -47,7 +59,9 @@ export async function getObjectStream(key: string) {
   try {
     const data = await s3Client.send(command);
     console.log(`Successfully retrieved ${key} from S3`);
-    return data.Body as ReadableStream;
+    const stream = data.Body as Readable
+    const metadata = { key, type: data.ContentType as string, size: data.ContentLength as number }
+    return { stream, metadata }
   } catch (err) {
     console.error(`Error retrieving file from S3: ${err}`);
     throw err;

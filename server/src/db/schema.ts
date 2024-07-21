@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { index, pgTable, serial, text, integer, boolean, varchar, timestamp } from "drizzle-orm/pg-core";
+import { index, pgTable, serial, text, integer, doublePrecision, boolean, varchar, timestamp } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
 export const podcasts = pgTable("podcasts", {
@@ -41,8 +41,8 @@ export const transcriptions = pgTable(
   {
     id: serial("id").primaryKey(),
     segmentId: integer("segmentId").notNull(),
-    startTime: integer("startTime").notNull(), // Time in seconds from the start of the segment
-    endTime: integer("endTime").notNull(), // Time in seconds from the start of the segment
+    startTime: doublePrecision("startTime").notNull(), // Time in seconds from the start of the segment
+    endTime: doublePrecision("endTime").notNull(), // Time in seconds from the start of the segment
     transcription: text("transcription").notNull(), // Transcription text
     createdAt: timestamp("createdAt").defaultNow(),
   },
