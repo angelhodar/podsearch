@@ -15,13 +15,12 @@ export async function processEpisode() {
     with: { segments: true, podcast: true },
   });
 
-  console.log("Episode to process:");
-  console.log(episode);
-
   if (!episode) {
     console.log("No episode to process found");
     return;
   }
+
+  console.log(`Episode to process: ${episode.id}`);
 
   const episodeName = `${episode.podcast.title.toLowerCase().replaceAll(" ", "_")}_${episode.id}`;
   const episodeAudioKey = `podcasts/${episodeName}.mp3`;
@@ -108,7 +107,7 @@ export async function processEpisode() {
 
   console.log(`Segments to process: ${segmentsToProcess.length}`);
 
-  for (const segment of segmentsToProcess.slice(12)) {
+  for (const segment of segmentsToProcess.slice(0, 12)) {
     console.log(`Fetching stream for audio segment ${segment.id}`);
     const data = await getObject(segment.audioFileUrl);
 

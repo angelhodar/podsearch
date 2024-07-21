@@ -15,7 +15,7 @@ export async function parseFromRssFeed(url: string): Promise<ParsedPodcast> {
 
   const podcast: CreatePodcast = {
     title: feed.title as string,
-    description: feed.title,
+    description: feed.description,
     link: feed.link,
     language: feed.language,
     author: feed.itunes?.author as string,
