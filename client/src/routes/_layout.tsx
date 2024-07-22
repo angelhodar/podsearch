@@ -1,11 +1,13 @@
-import { createFileRoute, Outlet } from '@tanstack/react-router'
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { SearchIcon } from "lucide-react";
 
-export const Route = createFileRoute('/_layout')({
-  component: Layout
-})
+export const Route = createFileRoute("/_layout")({
+	component: Layout,
+});
 
 function Layout() {
+	const navigate = Route.useNavigate();
+
 	return (
 		<div className="antialiased mx-auto max-w-4xl p-4 mt-10">
 			<div className="text-center">
@@ -23,12 +25,17 @@ function Layout() {
 					</div>
 					<input
 						type="search"
+						onChange={(e) => {
+							if (!e.target.value) navigate({ to: "/" });
+							if (e.target.value.length >= 4)
+								navigate({ to: "/search", search: { q: e.target.value } });
+						}}
 						placeholder="Search for a keyword or phrase"
 						className="block w-full p-4 pl-10 text-sm rounded-lg bg-muted focus:ring-primary focus:border-primary"
 					/>
 				</div>
 			</div>
-      <Outlet />
+			<Outlet />
 		</div>
 	);
 }

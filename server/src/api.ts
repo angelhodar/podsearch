@@ -23,19 +23,10 @@ app.get("/podcasts/:id", async (c) => {
 
   const podcast = await db.query.podcasts.findFirst({
     where: (podcasts, { eq }) => eq(podcasts.id, id),
+    with: { episodes: { limit: 10 } }
   });
 
   return c.json(podcast);
-});
-
-app.get("/podcasts/:id/episodes", async (c) => {
-  const id = Number.parseInt(c.req.param("id"));
-
-  const podcasts = await db.query.episodes.findMany({
-    where: (episodes, { eq }) => eq(episodes.podcastId, id),
-  });
-
-  return c.json(podcasts);
 });
 
 app.get("/search", async (c) => {
@@ -45,7 +36,12 @@ app.get("/search", async (c) => {
     transcription: transcriptions.transcription,
     startTime: transcriptions.startTime,
     endTime: transcriptions.endTime,
+    position: segments.position,
+    duration: segments.duration,
+    thumbnailUrl: episodes.thumbnailUrl,
+    audioFileUrl: segments.audioFileUrl,
     episodeTitle: episodes.title,
+    releaseDate: episodes.releaseDate,
     podcastTitle: podcasts.title,
   })
   .from(transcriptions)

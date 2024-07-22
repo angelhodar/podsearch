@@ -34,7 +34,7 @@ export default function Episode(props: EpisodeProps) {
 						<div>
 							<h3 className="text-lg">{title}</h3>
 							<p className="text-sm text-muted-foreground">
-								The Wild Project - {new Date(releaseDate).toLocaleDateString()}
+								{podcastTitle} - {new Date(releaseDate).toLocaleDateString()}
 							</p>
 						</div>
 					</div>

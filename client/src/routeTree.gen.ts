@@ -13,6 +13,7 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as LayoutImport } from './routes/_layout'
 import { Route as LayoutIndexImport } from './routes/_layout/index'
+import { Route as LayoutSearchImport } from './routes/_layout/search'
 import { Route as LayoutPodcastsIdImport } from './routes/_layout/podcasts.$id'
 
 // Create/Update Routes
@@ -24,6 +25,11 @@ const LayoutRoute = LayoutImport.update({
 
 const LayoutIndexRoute = LayoutIndexImport.update({
   path: '/',
+  getParentRoute: () => LayoutRoute,
+} as any)
+
+const LayoutSearchRoute = LayoutSearchImport.update({
+  path: '/search',
   getParentRoute: () => LayoutRoute,
 } as any)
 
@@ -42,6 +48,13 @@ declare module '@tanstack/react-router' {
       fullPath: ''
       preLoaderRoute: typeof LayoutImport
       parentRoute: typeof rootRoute
+    }
+    '/_layout/search': {
+      id: '/_layout/search'
+      path: '/search'
+      fullPath: '/search'
+      preLoaderRoute: typeof LayoutSearchImport
+      parentRoute: typeof LayoutImport
     }
     '/_layout/': {
       id: '/_layout/'
@@ -64,6 +77,7 @@ declare module '@tanstack/react-router' {
 
 export const routeTree = rootRoute.addChildren({
   LayoutRoute: LayoutRoute.addChildren({
+    LayoutSearchRoute,
     LayoutIndexRoute,
     LayoutPodcastsIdRoute,
   }),
@@ -83,9 +97,14 @@ export const routeTree = rootRoute.addChildren({
     "/_layout": {
       "filePath": "_layout.tsx",
       "children": [
+        "/_layout/search",
         "/_layout/",
         "/_layout/podcasts/$id"
       ]
+    },
+    "/_layout/search": {
+      "filePath": "_layout/search.tsx",
+      "parent": "/_layout"
     },
     "/_layout/": {
       "filePath": "_layout/index.tsx",
