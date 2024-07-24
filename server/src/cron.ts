@@ -10,6 +10,8 @@ import { getStreamFromFileUrl } from "./utils";
 import config from "./config";
 
 export async function processEpisode() {
+  console.log("Started audio processing job")
+
   const episode = await db.query.episodes.findFirst({
     where: eq(episodes.processed, false),
     with: { segments: true, podcast: true },
@@ -143,6 +145,8 @@ export async function processEpisode() {
   if (segmentsToProcess.every((s) => s.processed)) {
     await db.update(episodes).set({ processed: true }).where(eq(episodes.id, episode.id));
   }
+
+  console.log("Finish audio processing job")
 }
 
 schedule.scheduleJob("0 */4 * * *", processEpisode);
