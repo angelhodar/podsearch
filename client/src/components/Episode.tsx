@@ -1,3 +1,5 @@
+import AudioPlayer from "./AudioPlayer";
+
 interface EpisodeProps {
 	title: string;
 	podcastTitle: string;
@@ -44,9 +46,7 @@ export default function Episode(props: EpisodeProps) {
 			<p className="text-muted-foreground">{description}</p>
 
 			<div className="flex w-full items-center justify-between">
-				<audio controls>
-					<source src={audio} type="audio/ogg" />
-				</audio>
+			<AudioPlayer audioUrl={audio} />
 				<div className="text-sm font-bold text-muted-foreground rounded-xl border p-2">
 					{processed ? "PROCESADO" : "SIN PROCESAR"}
 				</div>

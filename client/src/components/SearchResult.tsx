@@ -1,4 +1,4 @@
-import { useRef, useEffect, type ElementRef } from "react";
+import AudioPlayer from "./AudioPlayer";
 
 interface SearchResultProps {
 	query: string;
@@ -40,26 +40,6 @@ export default function SearchResult(props: SearchResultProps) {
 
 	const parts = transcription.split(new RegExp(`(${query})`, "gi"));
 
-	const audioRef = useRef<ElementRef<"audio">>(null);
-
-	useEffect(() => {
-		const audioElement = audioRef.current;
-
-		if (!audioElement) return;
-
-		const handleLoadedMetadata = () => {
-			audioElement.currentTime = start - offset;
-		};
-
-		// Ensure we set the start time when metadata is loaded
-		audioElement.addEventListener("loadedmetadata", handleLoadedMetadata);
-
-		// Clean up the event listener when the component unmounts
-		return () => {
-			audioElement.removeEventListener("loadedmetadata", handleLoadedMetadata);
-		};
-	}, [start, offset]);
-
 	return (
 		<div className="p-4 bg-card rounded-lg shadow-sm flex flex-col items-start gap-4">
 			<div className="flex items-start space-x-4 w-full">
@@ -93,12 +73,7 @@ export default function SearchResult(props: SearchResultProps) {
 			</p>
 
 			<div className="flex w-full items-center justify-between">
-				<audio controls ref={audioRef}>
-					<source
-						src={`https://podsearch.s3.eu-west-1.amazonaws.com/${audio}`}
-						type="audio/ogg"
-					/>
-				</audio>
+				<AudioPlayer audioUrl={audio} initialOffset={start - offset} />
 				<div className="text-sm font-bold text-muted-foreground rounded-xl border p-2">
 					{secondsToMinutesFormat(start)} - {secondsToMinutesFormat(end)}
 				</div>
