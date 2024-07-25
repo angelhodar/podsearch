@@ -3,13 +3,16 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
+    "start": "node dist/src/index.js",
     "dev": "npx tsx watch src/index.ts",
+    "build": "tsc && tsc-alias",
     "studio": "npx drizzle-kit studio",
     "sync": "npx drizzle-kit push",
     "manual": "npx tsx src/run.ts",
     "lint": "npx @biomejs/biome lint --write --unsafe ./src",
     "format": "npx @biomejs/biome format --write ./src"
   },
+  "type": "module",
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -20,6 +23,7 @@
     "@types/node-schedule": "^2.1.7",
     "@types/pg": "^8.11.6",
     "drizzle-kit": "^0.22.8",
+    "tsc-alias": "^1.8.10",
     "typescript": "^5.5.3"
   },
   "dependencies": {

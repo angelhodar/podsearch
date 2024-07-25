@@ -4,11 +4,15 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": [
-      "node"
-    ],
+    "types": ["node"],
     "jsx": "react-jsx",
     "jsxImportSource": "hono/jsx",
+    "outDir": "dist",
+    "baseUrl": "./src",
+  },
+  "tsc-alias": {
+    "resolveFullPaths": true,
   }
 }

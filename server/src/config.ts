@@ -1,5 +1,7 @@
-import "dotenv/config";
+import { config } from "dotenv";
 import { z } from "zod";
+
+config()
 
 // Define a Zod schema for the environment variables
 const configSchema = z.object({
@@ -15,11 +17,11 @@ const configSchema = z.object({
 });
 
 // Parse and validate process.env using the schema
-const config = configSchema.safeParse(process.env);
+const configData = configSchema.safeParse(process.env);
 
-if (!config.success) {
-  console.error("Invalid environment variables:", config.error.format());
+if (!configData.success) {
+  console.error("Invalid environment variables:", configData.error.format());
   process.exit(1);
 }
 
-export default config.data
+export default configData.data

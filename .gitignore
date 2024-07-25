@@ -15,6 +15,7 @@ dist
 dist-ssr
 *.local
 tmp
+build
 
 # Editor directories and files
 .vscode
