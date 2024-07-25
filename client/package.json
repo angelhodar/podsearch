@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "start": "vite preview --port 3000",
+    "start": "vite preview --port 3000 --host",
     "dev": "vite",
     "build": "tsc -b && vite build",
     "format": "npx @biomejs/biome format ./ --write",
