@@ -149,4 +149,6 @@ export async function processEpisode() {
   console.log("Finish audio processing job")
 }
 
-schedule.scheduleJob("0 */4 * * *", processEpisode);
+export async function startBackgroundJobs() {
+  schedule.scheduleJob("0 */6 * * *", processEpisode);
+}
