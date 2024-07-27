@@ -1,6 +1,6 @@
 FROM node:20-alpine
 
-RUN apt-get update && apt-get install -y ffmpeg
+RUN apk update && apk add --no-cache ffmpeg
 
 WORKDIR /usr/src/app
 
