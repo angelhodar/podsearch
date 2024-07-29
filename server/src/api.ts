@@ -8,17 +8,17 @@ const app = new Hono();
 
 app.use('/*', cors())
 
-app.get("/", async (c) => {
+app.get("/api", async (c) => {
   return c.json({ status: "ok" });
 });
 
-app.get("/podcasts", async (c) => {
+app.get("/api/podcasts", async (c) => {
   const podcasts = await db.query.podcasts.findMany();
 
   return c.json(podcasts);
 });
 
-app.get("/podcasts/:id", async (c) => {
+app.get("/api/podcasts/:id", async (c) => {
   const id = Number.parseInt(c.req.param("id"));
 
   const podcast = await db.query.podcasts.findFirst({
@@ -29,7 +29,7 @@ app.get("/podcasts/:id", async (c) => {
   return c.json(podcast);
 });
 
-app.get("/search", async (c) => {
+app.get("/api/search", async (c) => {
   const query = c.req.query('q')
 
   const results = await db.select({
@@ -54,7 +54,7 @@ app.get("/search", async (c) => {
   return c.json(results)
 })
 
-app.post("/podcasts", async (c) => {
+app.post("/api/podcasts", async (c) => {
   const { importer, url } = await c.req.json();
 
   if (importer !== "rss") throw new Error("Podcast importer not supported");
